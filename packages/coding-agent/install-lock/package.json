@@ -1,0 +1,15 @@
+{
+	"name": "@bailu/coding-agent-install",
+	"version": "0.85.1",
+	"private": true,
+	"description": "Lockfile root used by the Bailu installer and updater.",
+	"dependencies": {
+		"@bailu/coding-agent": "0.85.1"
+	},
+	"overrides": {
+		"protobufjs": "7.6.6"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	}
+}
