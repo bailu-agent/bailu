@@ -936,24 +936,10 @@ export class InteractiveMode {
 				hint("app.clipboard.pasteImage", "to paste image (with text fallback)"),
 				rawKeyHint("drop files", "to attach"),
 			].join("\n");
-			const compactInstructions = [
-				hint("app.interrupt", "interrupt"),
-				rawKeyHint(`${keyText("app.clear")}/${keyText("app.exit")}`, "clear/exit"),
-				rawKeyHint("/", "commands"),
-				rawKeyHint("!", "bash"),
-				hint("app.tools.expand", "more"),
-			].join(theme.fg("muted", " · "));
-			const compactOnboarding = theme.fg(
-				"dim",
-				`Press ${keyText("app.tools.expand")} to show full startup help and loaded resources.`,
-			);
-			const onboarding = theme.fg(
-				"dim",
-				`Bailu can explain its own features and look up its docs. Ask it how to use or extend Bailu.`,
-			);
+			const tagline = "Vibe Learning and Vibe Leaping";
 			this.builtInHeader = new ExpandableText(
-				() => `${logo}\n${compactInstructions}\n${compactOnboarding}\n\n${onboarding}`,
-				() => `${logo}\n${expandedInstructions}\n\n${onboarding}`,
+				() => `${logo}\n\n${tagline}`,
+				() => `${logo}\n\n${tagline}\n\n${expandedInstructions}`,
 				this.getStartupExpansionState(),
 				1,
 				0,
@@ -1647,7 +1633,7 @@ export class InteractiveMode {
 		// Resource rendering is idempotent; chat clears no longer clear this separate container.
 		this.loadedResourcesContainer.clear();
 
-		const showListing = options?.force || this.options.verbose || !this.settingsManager.getQuietStartup();
+		const showListing = options?.force || this.options.verbose || this.toolOutputExpanded;
 		const showDiagnostics = showListing || options?.showDiagnosticsWhenQuiet === true;
 		if (!showListing && !showDiagnostics) {
 			return;
@@ -4222,6 +4208,9 @@ export class InteractiveMode {
 					child.setExpanded(expanded);
 				}
 			}
+		}
+		if (this.isInitialized) {
+			this.showLoadedResources();
 		}
 		this.showStatus(`Tool output: ${expanded ? "expanded" : "collapsed"}`);
 	}
