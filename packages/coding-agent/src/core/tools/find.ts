@@ -7,6 +7,7 @@ import { ensureTool } from "../../utils/tools-manager.ts";
 import type { ExtensionContext, ToolDefinition } from "../extensions/types.ts";
 import { pathExists, resolveToCwd } from "./path-utils.ts";
 import { findRenderers } from "./renderers/find.ts";
+import { findWithFallback } from "./search-fallback.ts";
 import { wrapToolDefinition } from "./tool-definition-wrapper.ts";
 import { DEFAULT_MAX_BYTES, formatSize, type TruncationResult, truncateHead } from "./truncate.ts";
 
@@ -58,8 +59,8 @@ export interface FindOperations {
 
 const defaultFindOperations: FindOperations = {
 	exists: pathExists,
-	// This is a placeholder. Actual fd execution happens in execute() when no custom glob is provided.
-	glob: () => [],
+	// Pure-Node fallback used when fd is unavailable; the fast path spawns fd directly.
+	glob: (pattern, cwd, { limit }) => findWithFallback(cwd, pattern, { limit }),
 };
 
 export interface FindToolOptions {
@@ -112,24 +113,9 @@ export function createFindToolDefinition(
 						const effectiveLimit = limit ?? DEFAULT_LIMIT;
 						const ops = customOps ?? defaultFindOperations;
 
-						// If custom operations provide glob(), use that instead of fd.
-						if (customOps?.glob) {
-							if (!(await ops.exists(searchPath))) {
-								settle(() => reject(new Error(`Path not found: ${searchPath}`)));
-								return;
-							}
-							if (signal?.aborted) {
-								settle(() => reject(new Error("Operation aborted")));
-								return;
-							}
-							const results = await ops.glob(pattern, searchPath, {
-								ignore: ["**/node_modules/**", "**/.git/**"],
-								limit: effectiveLimit,
-							});
-							if (signal?.aborted) {
-								settle(() => reject(new Error("Operation aborted")));
-								return;
-							}
+						// Shared formatting for results from a glob operation (custom or the
+						// pure-Node fallback below): relativize, truncate, annotate limits.
+						const finishWithResults = (results: string[]) => {
 							if (results.length === 0) {
 								settle(() =>
 									resolve({
@@ -165,17 +151,55 @@ export function createFindToolDefinition(
 									details: Object.keys(details).length > 0 ? details : undefined,
 								}),
 							);
+						};
+
+						// If custom operations provide glob(), use that instead of fd.
+						if (customOps?.glob) {
+							if (!(await ops.exists(searchPath))) {
+								settle(() => reject(new Error(`Path not found: ${searchPath}`)));
+								return;
+							}
+							if (signal?.aborted) {
+								settle(() => reject(new Error("Operation aborted")));
+								return;
+							}
+							const results = await ops.glob(pattern, searchPath, {
+								ignore: ["**/node_modules/**", "**/.git/**"],
+								limit: effectiveLimit,
+							});
+							if (signal?.aborted) {
+								settle(() => reject(new Error("Operation aborted")));
+								return;
+							}
+							finishWithResults(results);
 							return;
 						}
 
-						// Default implementation uses fd.
+						// Default implementation uses fd. When fd is unavailable, fall back to
+						// the pure-Node search backend so the tool stays usable.
 						const fdPath = await ensureTool("fd");
 						if (signal?.aborted) {
 							settle(() => reject(new Error("Operation aborted")));
 							return;
 						}
 						if (!fdPath) {
-							settle(() => reject(new Error("fd is not available and could not be downloaded")));
+							if (!(await defaultFindOperations.exists(searchPath))) {
+								settle(() => reject(new Error(`Path not found: ${searchPath}`)));
+								return;
+							}
+							if (signal?.aborted) {
+								settle(() => reject(new Error("Operation aborted")));
+								return;
+							}
+							const results = await defaultFindOperations.glob(pattern, searchPath, {
+								ignore: ["**/node_modules/**", "**/.git/**"],
+								limit: effectiveLimit,
+							});
+							if (signal?.aborted) {
+								settle(() => reject(new Error("Operation aborted")));
+								return;
+							}
+							finishWithResults(results);
 							return;
 						}
 
