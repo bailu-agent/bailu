@@ -2,8 +2,22 @@ import { compare, valid } from "semver";
 import { getBailuUserAgent } from "./bailu-user-agent.ts";
 import { fetchWithRetry } from "./management-http.ts";
 
-const LATEST_VERSION_URL = "https://pi.dev/api/latest-version";
+/**
+ * bailu's own latest-version source. bailu is published on npm as @bailu/coding-agent,
+ * so the update check points at this fork's registry entry rather than upstream pi.
+ * Until the package's first release is published (or BAILU_LATEST_VERSION_URL is set),
+ * the lookup yields no update and the startup banner stays silent.
+ *
+ * Override with BAILU_LATEST_VERSION_URL to point at a custom endpoint, expecting a
+ * JSON object with a `version` string and optional `name`/`packageName` and `note`.
+ */
+const DEFAULT_LATEST_VERSION_URL = "https://registry.npmjs.org/@bailu/coding-agent/latest";
 const DEFAULT_VERSION_CHECK_TIMEOUT_MS = 10000;
+
+function getLatestVersionUrl(): string {
+	const override = process.env.BAILU_LATEST_VERSION_URL?.trim();
+	return override || DEFAULT_LATEST_VERSION_URL;
+}
 
 export interface LatestBailuRelease {
 	version: string;
@@ -55,7 +69,7 @@ export async function getLatestBailuRelease(
 	if (process.env.BAILU_OFFLINE) return undefined;
 
 	const response = await fetchWithRetry(
-		LATEST_VERSION_URL,
+		getLatestVersionUrl(),
 		{
 			headers: {
 				"User-Agent": getBailuUserAgent(currentVersion),
@@ -70,6 +84,7 @@ export async function getLatestBailuRelease(
 	if (!response.ok) return undefined;
 
 	const data = (await response.json()) as {
+		name?: unknown;
 		packageName?: unknown;
 		version?: unknown;
 		note?: unknown;
@@ -77,12 +92,14 @@ export async function getLatestBailuRelease(
 	if (typeof data.version !== "string" || !data.version.trim()) {
 		return undefined;
 	}
-	const packageName =
+	const explicitPackageName =
 		typeof data.packageName === "string" && data.packageName.trim() ? data.packageName.trim() : undefined;
+	const declaredName = typeof data.name === "string" && data.name.trim() ? data.name.trim() : undefined;
+	const packageName = explicitPackageName ?? declaredName;
 	const note = typeof data.note === "string" && data.note.trim() ? data.note.trim() : undefined;
 	return {
 		version: data.version.trim(),
-		packageName,
+		...(packageName ? { packageName } : {}),
 		...(note ? { note } : {}),
 	};
 }

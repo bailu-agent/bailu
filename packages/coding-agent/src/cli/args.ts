@@ -431,7 +431,10 @@ ${chalk.bold("Environment Variables:")}
   ${ENV_SESSION_DIR.padEnd(32)} - Session storage directory (overridden by --session-dir)
   BAILU_PACKAGE_DIR                   - Override package directory (for Nix/Guix store paths)
   BAILU_OFFLINE                       - Disable startup network operations when set to 1/true/yes
+  BAILU_SKIP_VERSION_CHECK            - Disable automatic update checks when set to 1/true/yes
+  BAILU_LATEST_VERSION_URL            - Override latest-version endpoint (default: npm registry entry for @bailu/coding-agent)
   BAILU_TELEMETRY                     - Override install telemetry when set to 1/true/yes or 0/false/no
+  BAILU_TELEMETRY_URL                 - bailu-owned install telemetry endpoint; unset by default (no pings sent)
   BAILU_SHARE_VIEWER_URL              - Base URL for /share command (default: https://pi.dev/session/)
 
 ${chalk.bold("Built-in Tool Names:")}

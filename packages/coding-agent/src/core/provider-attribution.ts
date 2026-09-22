@@ -7,6 +7,7 @@ const NVIDIA_NIM_HOST = "integrate.api.nvidia.com";
 const CLOUDFLARE_API_HOST = "api.cloudflare.com";
 const CLOUDFLARE_AI_GATEWAY_HOST = "gateway.ai.cloudflare.com";
 const OPENCODE_HOST = "opencode.ai";
+const BAILU_HOMEPAGE = "https://github.com/bailu-agent/bailu";
 
 function matchesHost(baseUrl: string, expectedHost: string): boolean {
 	try {
@@ -43,7 +44,7 @@ function getDefaultAttributionHeaders(
 
 	if (isOpenRouterModel(model)) {
 		return {
-			"HTTP-Referer": "https://pi.dev",
+			"HTTP-Referer": BAILU_HOMEPAGE,
 			"X-OpenRouter-Title": "bailu",
 			"X-OpenRouter-Categories": "cli-agent",
 		};

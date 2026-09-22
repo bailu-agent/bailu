@@ -47,9 +47,19 @@ export type PackageCommand = "install" | "remove" | "update" | "list";
 
 type UpdateTarget = { type: "all" } | { type: "self" } | { type: "extensions"; source?: string } | { type: "models" };
 
-const DEFAULT_INSTALLER_API_BASE = "https://pi.dev/api/installer/releases";
 const MANAGED_INSTALL_MARKER = "managed-install.json";
 const MANAGED_RELEASE_VERSION_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+
+/**
+ * bailu publishes no managed-installer release channel yet, so managed updates only work
+ * when BAILU_INSTALLER_API_BASE points at a bailu-managed channel. There is deliberately
+ * no upstream default; bailu's binary updates must never come from pi's installer API.
+ */
+function getManagedInstallerApiBase(): string | undefined {
+	const configured = process.env.BAILU_INSTALLER_API_BASE?.trim();
+	if (!configured) return undefined;
+	return configured.replace(/\/+$/, "");
+}
 
 function getActiveManagedInstallRoot(): string | undefined {
 	const configuredRoot = process.env.BAILU_MANAGED_INSTALL_ROOT?.trim();
@@ -183,13 +193,17 @@ async function runManagedSelfUpdate(managedRoot: string, version: string): Promi
 		throw error;
 	}
 
+	const installerApiBase = getManagedInstallerApiBase();
+	if (!installerApiBase) {
+		throw new Error(
+			`Managed ${APP_NAME} updates require BAILU_INSTALLER_API_BASE to point at a bailu-managed release channel. ` +
+				`The fork publishes no managed installer channel by default.`,
+		);
+	}
+
 	let stageDir: string | undefined;
 	try {
 		cleanupManagedStaging(managedRoot);
-		const installerApiBase = (process.env.BAILU_INSTALLER_API_BASE?.trim() || DEFAULT_INSTALLER_API_BASE).replace(
-			/\/+$/,
-			"",
-		);
 		const releaseUrl = `${installerApiBase}/${encodeURIComponent(version)}`;
 		const stagingRoot = join(managedRoot, "staging");
 		const releasesRoot = join(managedRoot, "releases");
@@ -669,7 +683,10 @@ async function getSelfUpdatePlan(force: boolean): Promise<SelfUpdatePlan> {
 		});
 	}
 	if (!latestRelease) {
-		throw new Error(`Could not determine latest ${APP_NAME} version.`);
+		throw new Error(
+			`Could not determine latest ${APP_NAME} version: no published ${PACKAGE_NAME} release was found. ` +
+				`Until the fork's first release ships, update ${APP_NAME} from the source that installed it.`,
+		);
 	}
 
 	const packageName = latestRelease.packageName ?? PACKAGE_NAME;

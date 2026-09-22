@@ -17,6 +17,7 @@ beforeEach(() => {
 
 afterEach(() => {
 	vi.unstubAllGlobals();
+	vi.unstubAllEnvs();
 	if (originalSkipVersionCheck === undefined) {
 		delete process.env.BAILU_SKIP_VERSION_CHECK;
 	} else {
@@ -42,13 +43,13 @@ describe("version checks", () => {
 		await expect(checkForNewBailuVersion("1.2.2")).resolves.toEqual({ version: "1.2.3" });
 	});
 
-	it("uses the pi.dev version check api with a bailu user agent", async () => {
-		const fetchMock = vi.fn(async () => Response.json({ version: "1.2.4" }));
+	it("uses the bailu npm registry version endpoint with a bailu user agent", async () => {
+		const fetchMock = vi.fn(async () => Response.json({ name: "@bailu/coding-agent", version: "1.2.4" }));
 		vi.stubGlobal("fetch", fetchMock);
 
 		await expect(getLatestBailuVersion("1.2.3")).resolves.toBe("1.2.4");
 		expect(fetchMock).toHaveBeenCalledWith(
-			"https://pi.dev/api/latest-version",
+			"https://registry.npmjs.org/@bailu/coding-agent/latest",
 			expect.objectContaining({
 				headers: expect.objectContaining({
 					"User-Agent": expect.stringMatching(/^bailu\/1\.2\.3 /),
@@ -89,12 +90,19 @@ describe("version checks", () => {
 		expect(formatVersionCheckError(error)).toBe("fetch failed (ETIMEDOUT, ENETUNREACH)");
 	});
 
-	it("returns the active package metadata from the version check api", async () => {
+	it("returns the active package metadata from the version endpoint", async () => {
+		const fetchMock = vi.fn(async () => Response.json({ name: "@new-scope/bailu", version: "1.2.4" }));
+		vi.stubGlobal("fetch", fetchMock);
+
+		await expect(getLatestBailuRelease("1.2.3")).resolves.toEqual({
+			packageName: "@new-scope/bailu",
+			version: "1.2.4",
+		});
+	});
+
+	it("prefers an explicit packageName over the declared name", async () => {
 		const fetchMock = vi.fn(async () =>
-			Response.json({
-				packageName: "@new-scope/bailu",
-				version: "1.2.4",
-			}),
+			Response.json({ name: "@other/bailu", packageName: "@new-scope/bailu", version: "1.2.4" }),
 		);
 		vi.stubGlobal("fetch", fetchMock);
 
@@ -102,6 +110,22 @@ describe("version checks", () => {
 			packageName: "@new-scope/bailu",
 			version: "1.2.4",
 		});
+	});
+
+	it("reports no update while the bailu package is not published", async () => {
+		const fetchMock = vi.fn(async () => new Response("Not Found", { status: 404 }));
+		vi.stubGlobal("fetch", fetchMock);
+
+		await expect(getLatestBailuRelease("1.2.3")).resolves.toBeUndefined();
+	});
+
+	it("honors an explicit latest-version endpoint override", async () => {
+		vi.stubEnv("BAILU_LATEST_VERSION_URL", "https://example.test/api/latest-bailu");
+		const fetchMock = vi.fn(async () => Response.json({ packageName: "@bailu/coding-agent", version: "1.2.4" }));
+		vi.stubGlobal("fetch", fetchMock);
+
+		await expect(getLatestBailuVersion("1.2.3")).resolves.toBe("1.2.4");
+		expect(fetchMock).toHaveBeenCalledWith("https://example.test/api/latest-bailu", expect.anything());
 	});
 
 	it("returns update notes from the version check api", async () => {

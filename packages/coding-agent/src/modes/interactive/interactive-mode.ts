@@ -95,7 +95,7 @@ import { type SessionEntry, SessionManager, sessionEntryToContextMessages } from
 import type { FullscreenExitOutput, TuiMode } from "../../core/settings-manager.ts";
 import { BUILTIN_SLASH_COMMANDS } from "../../core/slash-commands.ts";
 import type { SourceInfo } from "../../core/source-info.ts";
-import { isInstallTelemetryEnabled } from "../../core/telemetry.ts";
+import { getInstallTelemetryEndpoint, isInstallTelemetryEnabled } from "../../core/telemetry.ts";
 import { withBuiltInRenderers } from "../../core/tools/renderers/index.ts";
 import type { TruncationResult } from "../../core/tools/truncate.ts";
 import { hasTrustRequiringProjectResources, ProjectTrustStore } from "../../core/trust-manager.ts";
@@ -1231,7 +1231,13 @@ export class InteractiveMode {
 			return;
 		}
 
-		void fetch(`https://pi.dev/api/report-install?version=${encodeURIComponent(version)}`, {
+		const endpoint = getInstallTelemetryEndpoint();
+		if (!endpoint) {
+			return;
+		}
+
+		const separator = endpoint.includes("?") ? "&" : "?";
+		void fetch(`${endpoint}${separator}version=${encodeURIComponent(version)}`, {
 			headers: {
 				"User-Agent": getBailuUserAgent(version),
 			},
@@ -4274,7 +4280,7 @@ export class InteractiveMode {
 	showNewVersionNotification(release: LatestBailuRelease): void {
 		const action = theme.fg("accent", `${APP_NAME} update`);
 		const updateInstruction = theme.fg("muted", `New version ${release.version} is available. Run `) + action;
-		const changelogUrl = "https://pi.dev/changelog";
+		const changelogUrl = "https://github.com/bailu-agent/bailu/blob/main/packages/coding-agent/CHANGELOG.md";
 		const changelogLink = getCapabilities().hyperlinks
 			? hyperlink(theme.fg("accent", changelogUrl), changelogUrl)
 			: theme.fg("accent", changelogUrl);

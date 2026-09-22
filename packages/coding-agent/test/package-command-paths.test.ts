@@ -99,7 +99,7 @@ if (process.platform !== "win32") fs.chmodSync(bailuPath, 0o755);
 			"fetch",
 			vi.fn(async (input: string | URL | Request) => {
 				const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
-				if (url === "https://pi.dev/api/latest-version") {
+				if (url === "https://registry.npmjs.org/@bailu/coding-agent/latest") {
 					return Response.json({ packageName: PACKAGE_NAME, version: targetVersion });
 				}
 				const releaseUrl = `https://example.test/api/installer/releases/${targetVersion}`;
