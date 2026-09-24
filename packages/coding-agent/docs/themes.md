@@ -161,15 +161,15 @@ vim ~/.bailu/agent/themes/my-theme.json
 
 - `name` is required, must be unique, and must not contain `/`.
 - `vars` is optional. Define reusable colors here, then reference them in `colors`.
-- `colors` must define all 53 required tokens. `thinkingMax` and the two search highlight tokens are optional and use the fallbacks listed below.
+- `colors` must define all 51 required tokens. `scrollbarTrack`, `scrollbarThumb`, `thinkingMax`, and the two search highlight tokens are optional and use the fallbacks listed below.
 
 The `$schema` field enables editor auto-completion and validation.
 
 ## Color Tokens
 
-Every theme must define all 53 required color tokens. The optional tokens preserve compatibility with existing themes: `thinkingMax` falls back to `thinkingXhigh`, `searchMatchBg` falls back to `selectedBg`, and `searchMatchText` falls back to `text`. Other search matches use `searchMatchText` on `searchMatchBg` with an underline; the current match reverses that foreground/background pair and uses bold text.
+Every theme must define all 51 required color tokens. The optional tokens preserve compatibility with existing themes: `scrollbarTrack` falls back to `muted`, `scrollbarThumb` falls back to `text`, `thinkingMax` falls back to `thinkingXhigh`, `searchMatchBg` falls back to `selectedBg`, and `searchMatchText` falls back to `text`. Other search matches use `searchMatchText` on `searchMatchBg` with an underline; the current match reverses that foreground/background pair and uses bold text.
 
-### Core UI (13 colors)
+### Core UI (11 required, 2 optional)
 
 | Token | Purpose |
 |-------|---------|
@@ -184,8 +184,8 @@ Every theme must define all 53 required color tokens. The optional tokens preser
 | `dim` | Tertiary text |
 | `text` | Default text (usually `""`) |
 | `thinkingText` | Thinking block text |
-| `scrollbarTrack` | Fullscreen scrollbar track foreground |
-| `scrollbarThumb` | Fullscreen scrollbar thumb foreground, shared by normal and expanded states |
+| `scrollbarTrack` | Fullscreen scrollbar track foreground; optional, falls back to `muted` |
+| `scrollbarThumb` | Fullscreen scrollbar thumb foreground, shared by normal and expanded states; optional, falls back to `text` |
 
 ### Backgrounds & Content (11 required, 2 optional)
 

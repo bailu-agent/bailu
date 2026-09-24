@@ -2,7 +2,7 @@
 
 # Bailu Packages
 
-Bailu packages bundle extensions, skills, prompt templates, and themes so you can share them through npm or git. A package can declare resources in `package.json` under the `bailu` key, or use conventional directories.
+Bailu packages bundle extensions, skills, prompt templates, and themes so you can share them through npm or git. A package can declare resources in `package.json` under the `pi` key, or use conventional directories.
 
 ## Table of Contents
 
@@ -115,13 +115,13 @@ Local paths point to files or directories on disk and are added to settings with
 
 ## Creating a Bailu Package
 
-Add a `bailu` manifest to `package.json` or use conventional directories. Include the `bailu-package` keyword for discoverability.
+Add a `pi` manifest to `package.json` or use conventional directories. Include the `bailu-package` keyword for discoverability.
 
 ```json
 {
   "name": "my-package",
   "keywords": ["bailu-package"],
-  "bailu": {
+  "pi": {
     "extensions": ["./extensions"],
     "skills": ["./skills"],
     "prompts": ["./prompts"],
@@ -140,7 +140,7 @@ The [package gallery](https://pi.dev/packages) displays packages tagged with `ba
 {
   "name": "my-package",
   "keywords": ["bailu-package"],
-  "bailu": {
+  "pi": {
     "extensions": ["./extensions"],
     "video": "https://example.com/demo.mp4",
     "image": "https://example.com/screenshot.png"
@@ -157,7 +157,7 @@ If both are set, video takes precedence.
 
 ### Convention Directories
 
-If no `bailu` manifest is present, bailu auto-discovers resources from these directories:
+If no `pi` manifest is present, bailu auto-discovers resources from these directories:
 
 - `extensions/` loads `.ts` and `.js` files
 - `skills/` recursively finds `SKILL.md` folders and loads top-level `.md` files as skills
@@ -180,7 +180,7 @@ Example:
     "shitty-extensions": "^1.0.1"
   },
   "bundledDependencies": ["shitty-extensions"],
-  "bailu": {
+  "pi": {
     "extensions": ["extensions", "node_modules/shitty-extensions/extensions"],
     "skills": ["skills", "node_modules/shitty-extensions/skills"]
   }

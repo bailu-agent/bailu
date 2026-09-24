@@ -80,7 +80,7 @@ Skills register as `/skill:name` commands:
 /skill:pdf-tools extract      # Load skill with arguments
 ```
 
-Arguments after the command are appended to the skill content as `User: <args>`.
+Arguments after the command are appended directly after the `<skill>…</skill>` block, with no prefix added.
 
 Toggle skill commands via `/settings` in interactive mode or in `settings.json`:
 

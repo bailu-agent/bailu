@@ -217,7 +217,7 @@ await session.prompt("After you're done, also check X", { streamingBehavior: "fo
 ```
 
 **Behavior:**
-- **Extension commands** (e.g., `/mycommand`): Execute immediately, even during streaming. They manage their own LLM interaction via `pi.sendMessage()`.
+- **Extension commands** (e.g., `/mycommand`): Execute immediately, even during streaming. They manage their own LLM interaction via `bailu.sendMessage()`.
 - **File-based prompt templates** (from `.md` files): Expanded to their content before sending or queueing.
 - **During streaming without `streamingBehavior`**: Throws an error. Use `steer()` or `followUp()` directly, or specify the option.
 - **`preflightResult(true)`**: Means the prompt was accepted, queued, or handled immediately.
@@ -369,7 +369,7 @@ When you pass a custom `ResourceLoader`, `cwd` and `agentDir` no longer control 
 ### Model
 
 ```typescript
-import { getModel } from "@bailu/ai";
+import { getModel } from "@bailu/ai/compat";
 import { ModelRuntime } from "@bailu/coding-agent";
 
 const modelRuntime = await ModelRuntime.create();
@@ -505,9 +505,11 @@ A failed or timed-out network refresh does not undo a successful credential oper
 Use a `ResourceLoader` to override the system prompt:
 
 ```typescript
-import { createAgentSession, DefaultResourceLoader } from "@bailu/coding-agent";
+import { createAgentSession, DefaultResourceLoader, getAgentDir } from "@bailu/coding-agent";
 
 const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir: getAgentDir(),
   systemPromptOverride: () => "You are a helpful assistant.",
 });
 await loader.reload();
@@ -604,9 +606,9 @@ const { session } = await createAgentSession({
 });
 ```
 
-Use `defineTool()` for standalone definitions and arrays like `customTools: [myTool]`. Inline `pi.registerTool({ ... })` already infers parameter types correctly.
+Use `defineTool()` for standalone definitions and arrays like `customTools: [myTool]`. Inline `bailu.registerTool({ ... })` already infers parameter types correctly.
 
-Custom tools passed via `customTools` are combined with extension-registered tools. Extensions loaded by the ResourceLoader can also register tools via `pi.registerTool()`.
+Custom tools passed via `customTools` are combined with extension-registered tools. Extensions loaded by the ResourceLoader can also register tools via `bailu.registerTool()`.
 
 If you pass `tools`, include each custom or extension tool name you want enabled, for example `tools: ["read", "bash", "my_tool"]`.
 
@@ -617,13 +619,15 @@ If you pass `tools`, include each custom or extension tool name you want enabled
 Extensions are loaded by the `ResourceLoader`. `DefaultResourceLoader` discovers extensions from `~/.bailu/agent/extensions/`, `.bailu/extensions/`, and settings.json extension sources.
 
 ```typescript
-import { createAgentSession, DefaultResourceLoader } from "@bailu/coding-agent";
+import { createAgentSession, DefaultResourceLoader, getAgentDir } from "@bailu/coding-agent";
 
 const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir: getAgentDir(),
   additionalExtensionPaths: ["/path/to/my-extension.ts"],
   extensionFactories: [
     (bailu) => {
-      pi.on("agent_start", () => {
+      bailu.on("agent_start", () => {
         console.log("[Inline Extension] Agent starting");
       });
     },
@@ -639,31 +643,35 @@ Extensions can register tools, subscribe to events, add commands, and more. See 
 **Named inline extensions:** By default, inline factories display as `<inline:1>`, `<inline:2>`, etc. in the startup Extensions list. To show a descriptive name instead, wrap the factory:
 
 ```typescript
-import type { InlineExtension } from "@bailu/coding-agent";
+import { DefaultResourceLoader, getAgentDir, type InlineExtension } from "@bailu/coding-agent";
 
 const myProvider: InlineExtension = {
   name: "my-provider",
   factory: (bailu) => {
-    pi.on("agent_start", () => {
+    bailu.on("agent_start", () => {
       console.log("[my-provider] Agent starting");
     });
   },
 };
 
 const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir: getAgentDir(),
   extensionFactories: [myProvider],
 });
 ```
 
 This displays as `<inline:my-provider>` instead of `<inline:1>`. Bare factory functions are still accepted for backward compatibility.
 
-**Event Bus:** Extensions can communicate via `pi.events`. Pass a shared `eventBus` to `DefaultResourceLoader` if you need to emit or listen from outside:
+**Event Bus:** Extensions can communicate via `bailu.events`. Pass a shared `eventBus` to `DefaultResourceLoader` if you need to emit or listen from outside:
 
 ```typescript
-import { createEventBus, DefaultResourceLoader } from "@bailu/coding-agent";
+import { createEventBus, DefaultResourceLoader, getAgentDir } from "@bailu/coding-agent";
 
 const eventBus = createEventBus();
 const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir: getAgentDir(),
   eventBus,
 });
 await loader.reload();
@@ -678,7 +686,9 @@ eventBus.on("my-extension:status", (data) => console.log(data));
 ```typescript
 import {
   createAgentSession,
+  createSyntheticSourceInfo,
   DefaultResourceLoader,
+  getAgentDir,
   type Skill,
 } from "@bailu/coding-agent";
 
@@ -687,10 +697,13 @@ const customSkill: Skill = {
   description: "Custom instructions",
   filePath: "/path/to/SKILL.md",
   baseDir: "/path/to",
-  source: "custom",
+  sourceInfo: createSyntheticSourceInfo("/path/to/SKILL.md", { source: "sdk" }),
+  disableModelInvocation: false,
 };
 
 const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir: getAgentDir(),
   skillsOverride: (current) => ({
     skills: [...current.skills, customSkill],
     diagnostics: current.diagnostics,
@@ -706,9 +719,11 @@ const { session } = await createAgentSession({ resourceLoader: loader });
 ### Context Files
 
 ```typescript
-import { createAgentSession, DefaultResourceLoader } from "@bailu/coding-agent";
+import { createAgentSession, DefaultResourceLoader, getAgentDir } from "@bailu/coding-agent";
 
 const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir: getAgentDir(),
   agentsFilesOverride: (current) => ({
     agentsFiles: [
       ...current.agentsFiles,
@@ -728,18 +743,23 @@ const { session } = await createAgentSession({ resourceLoader: loader });
 ```typescript
 import {
   createAgentSession,
+  createSyntheticSourceInfo,
   DefaultResourceLoader,
+  getAgentDir,
   type PromptTemplate,
 } from "@bailu/coding-agent";
 
 const customCommand: PromptTemplate = {
   name: "deploy",
   description: "Deploy the application",
-  source: "(custom)",
+  filePath: "/virtual/prompts/deploy.md",
+  sourceInfo: createSyntheticSourceInfo("/virtual/prompts/deploy.md", { source: "sdk" }),
   content: "# Deploy\n\n1. Build\n2. Test\n3. Deploy",
 };
 
 const loader = new DefaultResourceLoader({
+  cwd: process.cwd(),
+  agentDir: getAgentDir(),
   promptsOverride: (current) => ({
     prompts: [...current.prompts, customCommand],
     diagnostics: current.diagnostics,
@@ -797,7 +817,7 @@ const { session: restored } = await createAgentSession({
 
 // List sessions
 const currentProjectSessions = await SessionManager.list(process.cwd());
-const allSessions = await SessionManager.listAll(process.cwd());
+const allSessions = await SessionManager.listAll();
 
 // Session replacement API for /new, /resume, /fork, /clone, and import flows.
 const createRuntime: CreateAgentSessionRuntimeFactory = async ({ cwd, sessionManager, sessionStartEvent }) => {
@@ -839,12 +859,12 @@ const sm = SessionManager.open("/path/to/session.jsonl");
 
 // Session listing
 const currentProjectSessions = await SessionManager.list(process.cwd());
-const allSessions = await SessionManager.listAll(process.cwd());
+const allSessions = await SessionManager.listAll();
 
 // Tree traversal
 const entries = sm.getEntries();        // All entries (excludes header)
 const tree = sm.getTree();              // Full tree structure
-const path = sm.getPath();              // Path from root to current leaf
+const path = sm.getBranch();            // Entries from root to the current leaf
 const leaf = sm.getLeafEntry();         // Current leaf entry
 const entry = sm.getEntry(id);          // Get entry by ID
 const children = sm.getChildren(id);    // Direct children of entry
@@ -868,11 +888,11 @@ import { createAgentSession, SettingsManager, SessionManager } from "@bailu/codi
 
 // Default: loads from files (global + project merged)
 const { session } = await createAgentSession({
-  settingsManager: SettingsManager.create(),
+  settingsManager: SettingsManager.create(process.cwd()),
 });
 
 // With overrides
-const settingsManager = SettingsManager.create();
+const settingsManager = SettingsManager.create(process.cwd());
 settingsManager.applyOverrides({
   compaction: { enabled: false },
   retry: { enabled: true, maxRetries: 5 },
@@ -892,7 +912,7 @@ const { session } = await createAgentSession({
 ```
 
 **Static factories:**
-- `SettingsManager.create(cwd?, agentDir?)` - Load from files
+- `SettingsManager.create(cwd, agentDir?)` - Load from files
 - `SettingsManager.inMemory(settings?)` - No file I/O
 
 **Project-specific settings:**
@@ -961,7 +981,7 @@ interface LoadExtensionsResult {
 ## Complete Example
 
 ```typescript
-import { getModel } from "@bailu/ai";
+import { getModel } from "@bailu/ai/compat";
 import { Type } from "typebox";
 import {
   createAgentSession,
@@ -1220,7 +1240,6 @@ type ExtensionAPI
 type ToolDefinition
 type Skill
 type PromptTemplate
-type Tool
 ```
 
 For extension types, see [extensions.md](extensions.md) for the full API.

@@ -64,7 +64,7 @@ With images:
 
 If the agent is streaming and no `streamingBehavior` is specified, the command returns an error.
 
-**Extension commands**: If the message is an extension command (e.g., `/mycommand`), it executes immediately even during streaming. Extension commands manage their own LLM interaction via `pi.sendMessage()`.
+**Extension commands**: If the message is an extension command (e.g., `/mycommand`), it executes immediately even during streaming. Extension commands manage their own LLM interaction via `bailu.sendMessage()`.
 
 **Input expansion**: Skill commands (`/skill:name`) and prompt templates (`/template`) are expanded before sending/queueing.
 
@@ -790,7 +790,7 @@ Response:
 }
 ```
 
-Returns `{"text": null}` if no assistant messages exist.
+If no assistant messages exist, the `text` key is omitted (the underlying value is `undefined`), so `data` is `{}`.
 
 #### set_session_name
 
@@ -829,9 +829,9 @@ Response:
   "success": true,
   "data": {
     "commands": [
-      {"name": "session-name", "description": "Set or clear session name", "source": "extension", "path": "/home/user/.bailu/agent/extensions/session.ts"},
-      {"name": "fix-tests", "description": "Fix failing tests", "source": "prompt", "location": "project", "path": "/home/user/myproject/.bailu/agent/prompts/fix-tests.md"},
-      {"name": "skill:brave-search", "description": "Web search via Brave API", "source": "skill", "location": "user", "path": "/home/user/.bailu/agent/skills/brave-search/SKILL.md"}
+      {"name": "session-name", "description": "Set or clear session name", "source": "extension", "sourceInfo": {"path": "/home/user/.bailu/agent/extensions/session.ts", "source": "extension", "scope": "user", "origin": "top-level"}},
+      {"name": "fix-tests", "description": "Fix failing tests", "source": "prompt", "sourceInfo": {"path": "/home/user/myproject/.bailu/agent/prompts/fix-tests.md", "source": "prompt", "scope": "project", "origin": "top-level"}},
+      {"name": "skill:brave-search", "description": "Web search via Brave API", "source": "skill", "sourceInfo": {"path": "/home/user/.bailu/agent/skills/brave-search/SKILL.md", "source": "skill", "scope": "user", "origin": "top-level"}}
     ]
   }
 }
@@ -841,14 +841,15 @@ Each command has:
 - `name`: Command name (invoke with `/name`)
 - `description`: Human-readable description (optional for extension commands)
 - `source`: What kind of command:
-  - `"extension"`: Registered via `pi.registerCommand()` in an extension
+  - `"extension"`: Registered via `bailu.registerCommand()` in an extension
   - `"prompt"`: Loaded from a prompt template `.md` file
   - `"skill"`: Loaded from a skill directory (name is prefixed with `skill:`)
-- `location`: Where it was loaded from (optional, not present for extensions):
-  - `"user"`: User-level (`~/.bailu/agent/`)
-  - `"project"`: Project-level (`./.bailu/agent/`)
-  - `"path"`: Explicit path via CLI or settings
-- `path`: Absolute file path to the command source (optional)
+- `sourceInfo`: Source metadata for the owning resource:
+  - `path`: Absolute file path to the command source
+  - `source`: The loading mechanism (matches the top-level `source`)
+  - `scope`: `"user"`, `"project"`, or `"temporary"`
+  - `origin`: `"top-level"` (from a top-level path) or `"package"` (from an installed package)
+  - `baseDir`: Base directory for relative references (optional)
 
 **Note**: Built-in TUI commands (`/settings`, `/hotkeys`, etc.) are not included. They are handled only in interactive mode and would not execute if sent via `prompt`.
 
@@ -1434,8 +1435,7 @@ Source files:
 {
   "role": "user",
   "content": "Hello!",
-  "timestamp": 1733234567890,
-  "attachments": []
+  "timestamp": 1733234567890
 }
 ```
 
@@ -1505,21 +1505,6 @@ Created by the `bash` RPC command (not by LLM tool calls):
   "truncated": false,
   "fullOutputPath": null,
   "timestamp": 1733234567890
-}
-```
-
-### Attachment
-
-```json
-{
-  "id": "img1",
-  "type": "image",
-  "fileName": "photo.jpg",
-  "mimeType": "image/jpeg",
-  "size": 102400,
-  "content": "base64-encoded-data...",
-  "extractedText": null,
-  "preview": null
 }
 ```
 

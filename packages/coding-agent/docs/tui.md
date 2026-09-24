@@ -91,7 +91,7 @@ Without this propagation, typing with an IME (Chinese, Japanese, Korean, etc.) w
 **In extensions** via `ctx.ui.custom()`:
 
 ```typescript
-pi.on("session_start", async (_event, ctx) => {
+bailu.on("session_start", async (_event, ctx) => {
   const result = await ctx.ui.custom<string | null>((tui, theme, keybindings, done) =>
     new MyComponent({
       theme,
@@ -403,7 +403,7 @@ class MySelector {
 Usage in an extension:
 
 ```typescript
-pi.registerCommand("pick", {
+bailu.registerCommand("pick", {
   description: "Pick an item",
   handler: async (_args, ctx) => {
     const items = ["Option A", "Option B", "Option C"];
@@ -636,7 +636,7 @@ import type { ExtensionAPI } from "@bailu/coding-agent";
 import { DynamicBorder } from "@bailu/coding-agent";
 import { Container, type SelectItem, SelectList, Text } from "@bailu/tui";
 
-pi.registerCommand("pick", {
+bailu.registerCommand("pick", {
   handler: async (_args, ctx) => {
     const items: SelectItem[] = [
       { value: "opt1", label: "Option 1", description: "First option" },
@@ -694,7 +694,7 @@ For operations that take time and should be cancellable. `BorderedLoader` shows 
 ```typescript
 import { BorderedLoader } from "@bailu/coding-agent";
 
-pi.registerCommand("fetch", {
+bailu.registerCommand("fetch", {
   handler: async (_args, ctx) => {
     const result = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
       const loader = new BorderedLoader(tui, theme, "Fetching data...");
@@ -727,7 +727,7 @@ For toggling multiple settings. Use `SettingsList` from `@bailu/tui` with `getSe
 import { getSettingsListTheme } from "@bailu/coding-agent";
 import { Container, type SettingItem, SettingsList, Text } from "@bailu/tui";
 
-pi.registerCommand("settings", {
+bailu.registerCommand("settings", {
   handler: async (_args, ctx) => {
     const items: SettingItem[] = [
       { id: "verbose", label: "Verbose mode", currentValue: "off", values: ["on", "off"] },
@@ -917,7 +917,7 @@ class VimEditor extends CustomEditor {
 }
 
 export default function (bailu: ExtensionAPI) {
-  pi.on("session_start", (_event, ctx) => {
+  bailu.on("session_start", (_event, ctx) => {
     // Factory receives the TUI, theme, and keybindings from the app
     ctx.ui.setEditorComponent((tui, theme, keybindings) =>
       new VimEditor(tui, theme, keybindings)

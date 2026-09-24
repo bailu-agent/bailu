@@ -41,15 +41,15 @@ Anthropic subscription auth is active for Claude Pro/Max accounts. Third-party h
 
 ### xAI (Grok/X subscription)
 
-- Run `/login xai`, then select **Use a subscription**
-- `XAI_API_KEY` remains available through **Use an API key**
+- Run `/login xai`, then select **Sign in with an account**
+- `XAI_API_KEY` remains available through **Sign in with an API key**
 
 ### OpenRouter
 
 - Run `/login openrouter`, then select **Sign in with OpenRouter** to open the OpenRouter PKCE authorization flow
 - The authorization creates a user-controlled OpenRouter API key billed from your OpenRouter credits
 - On remote/headless machines (e.g. over SSH) the browser cannot reach the loopback callback; paste the final redirect URL (or the authorization code) into the login prompt instead
-- `OPENROUTER_API_KEY` remains available through **Use an API key**
+- `OPENROUTER_API_KEY` remains available through **Sign in with an API key**
 
 ### Radius
 

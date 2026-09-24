@@ -375,13 +375,13 @@ TypeScript modules that extend bailu with custom tools, commands, keyboard short
 
 ```typescript
 export default function (bailu: ExtensionAPI) {
-  pi.registerTool({ name: "deploy", ... });
-  pi.registerCommand("stats", { ... });
-  pi.on("tool_call", async (event, ctx) => { ... });
+  bailu.registerTool({ name: "deploy", ... });
+  bailu.registerCommand("stats", { ... });
+  bailu.on("tool_call", async (event, ctx) => { ... });
 }
 ```
 
-The default export can also be `async`. bailu waits for async extension factories before startup continues, which is useful for one-time initialization such as fetching remote model lists before calling `pi.registerProvider()`.
+The default export can also be `async`. bailu waits for async extension factories before startup continues, which is useful for one-time initialization such as fetching remote model lists before calling `bailu.registerProvider()`.
 
 **What's possible:**
 - Custom tools (or replace built-in tools entirely)

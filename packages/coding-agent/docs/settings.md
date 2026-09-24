@@ -81,7 +81,7 @@ For VS Code, include `--wait` so bailu resumes after the editor exits:
 
 ### Telemetry and update checks
 
-`enableInstallTelemetry` controls the anonymous install/update ping to `https://pi.dev/api/report-install` and Bailu attribution headers for OpenRouter, NVIDIA NIM, and Cloudflare provider requests. Opting out disables both. It does not disable update checks; Bailu can still fetch `https://pi.dev/api/latest-version` to look for the latest version.
+`enableInstallTelemetry` controls the anonymous install/update ping and Bailu attribution headers for OpenRouter, NVIDIA NIM, and Cloudflare provider requests. Opting out disables both. Bailu has no install-analytics backend of its own yet, so the ping only fires when a bailu-owned endpoint is configured via `BAILU_TELEMETRY_URL` — it never points at an upstream third party. Installation telemetry does not disable update checks; Bailu can still fetch the latest version from the npm registry entry `https://registry.npmjs.org/@bailu/coding-agent/latest` (override with `BAILU_LATEST_VERSION_URL`).
 
 Set `BAILU_SKIP_VERSION_CHECK=1` to disable the Bailu version update check. Use `--offline` or `BAILU_OFFLINE=1` to disable all startup network operations described here, including update checks, package update checks, and install/update telemetry.
 
