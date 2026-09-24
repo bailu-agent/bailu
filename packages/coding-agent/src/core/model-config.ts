@@ -65,7 +65,11 @@ const ThinkingLevelMapSchema = Type.Object({
 
 const ChatTemplateKwargScalarSchema = Type.Union([Type.String(), Type.Number(), Type.Boolean(), Type.Null()]);
 const ChatTemplateKwargVariableSchema = Type.Object({
-	$var: Type.Union([Type.Literal("thinking.enabled"), Type.Literal("thinking.effort")]),
+	$var: Type.Union([
+		Type.Literal("thinking.enabled"),
+		Type.Literal("thinking.effort"),
+		Type.Literal("thinking.budget"),
+	]),
 	omitWhenOff: Type.Optional(Type.Boolean()),
 });
 const ChatTemplateKwargSchema = Type.Union([ChatTemplateKwargScalarSchema, ChatTemplateKwargVariableSchema]);
